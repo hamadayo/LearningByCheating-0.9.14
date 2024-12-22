@@ -504,6 +504,9 @@ class MapImage(object):
 
 
     def world_to_pixel(self, location, offset=(0, 0)):
+        if math.isinf(location.x) or math.isinf(location.y) or math.isnan(location.x) or math.isnan(location.y):
+            print("Warning: Invalid location detected (infinity or NaN)")
+            return [0, 0]  # デフォルトの座標を返すか、エラーログ出力
         x = self.scale * self._pixels_per_meter * (location.x - self._world_offset[0])
         y = self.scale * self._pixels_per_meter * (location.y - self._world_offset[1])
         return [int(x - offset[0]), int(y - offset[1])]
@@ -690,9 +693,9 @@ class ModuleWorld(object):
             affected_traffic_light_text = 'None'
             if self.affected_traffic_light is not None:
                 state = self.affected_traffic_light.state
-                if state == carla.libcarla.TrafficLightState.Green:
+                if state == carla.TrafficLightState.Green:
                     affected_traffic_light_text = 'GREEN'
-                elif state == carla.libcarla.TrafficLightState.Yellow:
+                elif state == carla.Yellow:
                     affected_traffic_light_text = 'YELLOW'
                 else:
                     affected_traffic_light_text = 'RED'

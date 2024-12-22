@@ -8,6 +8,11 @@ WEATHER_2 = [4, 14]
 WEATHER_3 = [10, 14]
 WEATHER_4 = [1, 8, 14]
 
+# WEATHER_1 = [1]
+# WEATHER_2 = [1]
+# WEATHER_3 = [1]
+# WEATHER_4 = [1]
+
 _suites = dict()
 
 

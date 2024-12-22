@@ -63,3 +63,9 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+ROLE/
+ckptPhase0/
+ckpts/
+datasets/
+log/
+self_driving_input_assessment_model.h5

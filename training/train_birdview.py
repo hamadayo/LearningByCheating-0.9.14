@@ -20,7 +20,7 @@ except IndexError as e:
 import utils.bz_utils as bzu
 
 from models.birdview import BirdViewPolicyModelSS
-from train_util import one_hot
+from utils.train_utils import one_hot
 from utils.datasets.birdview_lmdb import get_birdview as load_data
 
 
@@ -190,7 +190,7 @@ if __name__ == '__main__':
 
     # Dataset.
     parser.add_argument('--dataset_dir', default='/raid0/dian/carla_0.9.6_data')
-    parser.add_argument('--batch_size', type=int, default=256)
+    parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--x_jitter', type=int, default=5)
     parser.add_argument('--y_jitter', type=int, default=0)
     parser.add_argument('--angle_jitter', type=int, default=5)

@@ -22,7 +22,7 @@ import utils.bz_utils as bzu
 
 from models.birdview import BirdViewPolicyModelSS
 from models.image import ImagePolicyModelSS
-from train_util import one_hot
+from utils.train_utils import one_hot
 from utils.datasets.image_lmdb import get_image as load_data
 
 BACKBONE = 'resnet34'
@@ -257,7 +257,7 @@ if __name__ == '__main__':
 
     # Dataset.
     parser.add_argument('--dataset_dir', default='/raid0/dian/carla_0.9.6_data')
-    parser.add_argument('--batch_size', type=int, default=96)
+    parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--augment', choices=['None', 'medium', 'medium_harder', 'super_hard'], default=None)
     
     # Optimizer.

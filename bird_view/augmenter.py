@@ -55,7 +55,7 @@ def medium(image_iteration):
         iaa.Sometimes(frequency_factor,
                       iaa.Multiply((multiply_factor_neg, multiply_factor_pos), per_channel=color_factor)),
         # change brightness of images (X-Y% of original value)
-        iaa.Sometimes(frequency_factor, iaa.ContrastNormalization((contrast_factor_neg, contrast_factor_pos),
+        iaa.Sometimes(frequency_factor, iaa.LinearContrast((contrast_factor_neg, contrast_factor_pos),
                                                                        per_channel=color_factor)),
         # improve or worsen the contrast
         iaa.Sometimes(frequency_factor, iaa.Grayscale((0.0, 1))),  # put grayscale
@@ -107,7 +107,7 @@ def soft(image_iteration):
         iaa.Sometimes(frequency_factor,
                       iaa.Multiply((multiply_factor_neg, multiply_factor_pos), per_channel=color_factor)),
         # change brightness of images (X-Y% of original value)
-        iaa.Sometimes(frequency_factor, iaa.ContrastNormalization((contrast_factor_neg, contrast_factor_pos),
+        iaa.Sometimes(frequency_factor, iaa.LinearContrast((contrast_factor_neg, contrast_factor_pos),
                                                                        per_channel=color_factor)),
         # improve or worsen the contrast
         iaa.Sometimes(frequency_factor, iaa.Grayscale((0.0, 1))),  # put grayscale
@@ -159,7 +159,7 @@ def high(image_iteration):
         iaa.Sometimes(frequency_factor,
                       iaa.Multiply((multiply_factor_neg, multiply_factor_pos), per_channel=color_factor)),
         # change brightness of images (X-Y% of original value)
-        iaa.Sometimes(frequency_factor, iaa.ContrastNormalization((contrast_factor_neg, contrast_factor_pos),
+        iaa.Sometimes(frequency_factor, iaa.LinearContrast((contrast_factor_neg, contrast_factor_pos),
                                                                        per_channel=color_factor)),
         # improve or worsen the contrast
         iaa.Sometimes(frequency_factor, iaa.Grayscale((0.0, 1))),  # put grayscale
@@ -212,7 +212,7 @@ def medium_harder(image_iteration):
         iaa.Sometimes(frequency_factor,
                       iaa.Multiply((multiply_factor_neg, multiply_factor_pos), per_channel=color_factor)),
         # change brightness of images (X-Y% of original value)
-        iaa.Sometimes(frequency_factor, iaa.ContrastNormalization((contrast_factor_neg, contrast_factor_pos),
+        iaa.Sometimes(frequency_factor, iaa.LinearContrast((contrast_factor_neg, contrast_factor_pos),
                                                                        per_channel=color_factor)),
         # improve or worsen the contrast
         iaa.Sometimes(frequency_factor, iaa.Grayscale((0.0, 1))),  # put grayscale
@@ -267,7 +267,7 @@ def super_hard(image_iteration):
         iaa.Sometimes(frequency_factor,
                       iaa.Multiply((multiply_factor_neg, multiply_factor_pos), per_channel=color_factor)),
         # change brightness of images (X-Y% of original value)
-        iaa.Sometimes(frequency_factor, iaa.ContrastNormalization((contrast_factor_neg, contrast_factor_pos),
+        iaa.Sometimes(frequency_factor, iaa.LinearContrast((contrast_factor_neg, contrast_factor_pos),
                                                                        per_channel=color_factor)),
         # improve or worsen the contrast
         # iaa.Sometimes(frequency_factor, iaa.Grayscale((0.0, 1))),  # put grayscale
@@ -324,7 +324,7 @@ def custom(image_iteration):
         iaa.Sometimes(frequency_factor,
                       iaa.Multiply((0.9, 1.3), per_channel=True)),
         # # change brightness of images (X-Y% of original value)
-        # iaa.Sometimes(frequency_factor, iaa.ContrastNormalization((0.1,0.5),
+        # iaa.Sometimes(frequency_factor, iaa.LinearContrast((0.1,0.5),
         #                                                               per_channel=True)),
         # improve or worsen the contrast
         # iaa.Sometimes(frequency_factor, iaa.Grayscale((0.0, 1))),  # put grayscale
@@ -376,7 +376,7 @@ def soft_harder(image_iteration):
         iaa.Sometimes(frequency_factor,
                       iaa.Multiply((multiply_factor_neg, multiply_factor_pos), per_channel=color_factor)),
         # change brightness of images (X-Y% of original value)
-        iaa.Sometimes(frequency_factor, iaa.ContrastNormalization((contrast_factor_neg, contrast_factor_pos),
+        iaa.Sometimes(frequency_factor, iaa.LinearContrast((contrast_factor_neg, contrast_factor_pos),
                                                                        per_channel=color_factor)),
         # improve or worsen the contrast
         iaa.Sometimes(frequency_factor, iaa.Grayscale((0.0, 1))),  # put grayscale

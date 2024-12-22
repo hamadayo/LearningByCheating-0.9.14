@@ -60,8 +60,10 @@ class Experiment(object):
         self.log_dir = Path(log_dir).resolve()
         self.log_dir.mkdir(parents=True, exist_ok=True)
 
-        for i in self._log._handlers:
-            self._log.remove(i)
+        # for i in self._log._handlers:
+        #     self._log.remove(i)
+
+        self._log.remove()
 
         self._writer_train = SummaryWriter(str(self.log_dir / 'train'))
         self._writer_val = SummaryWriter(str(self.log_dir / 'val'))

@@ -19,7 +19,7 @@ except IndexError as e:
     pass
 
 from bird_view.utils import carla_utils as cu
-from train_util import one_hot
+from utils.train_utils import one_hot
 from benchmark import make_suite
 
 BACKBONE = 'resnet34'
@@ -60,8 +60,8 @@ def get_control(agent_control, teacher_control, episode, beta=0.95):
 
 def rollout(replay_buffer, coord_converter, net, teacher_net, episode, 
         image_agent_kwargs=dict(), birdview_agent_kwargs=dict(),
-        episode_length=1000,
-        n_vehicles=100, n_pedestrians=250, port=2000, planner="new"):
+        episode_length=600,
+        n_vehicles=10, n_pedestrians=0, port=2000, planner="new"):
 
     from models.image import ImageAgent
     from models.birdview import BirdViewAgent
@@ -304,10 +304,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--log_dir', required=True)
     parser.add_argument('--log_iterations', default=100)
-    parser.add_argument('--max_episode', default=20)
+    parser.add_argument('--max_episode', default=30)
     parser.add_argument('--epoch_per_episode', type=int, default=5)
-    parser.add_argument('--batch_size', type=int, default=128)
-    parser.add_argument('--speed_noise', type=float, default=0.0)
+    parser.add_argument('--batch_size', type=int, default=16)
+    parser.add_argument('--speed_noise', type=float, default=0.01)
     parser.add_argument('--batch_aug', type=int, default=1)
 
     parser.add_argument('--ckpt', required=True)

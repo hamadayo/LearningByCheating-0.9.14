@@ -147,13 +147,21 @@ class LocalPlanner(object):
         :return:
         """
         # check we do not overflow the queue
+        # waypointを制限
         available_entries = self._waypoints_queue.maxlen - len(self._waypoints_queue)
+        # kが利用可能なエントリーよりも大きい場合、kを利用可能なエントリーに制限
         k = min(available_entries, k)
 
+        # k回繰り返しwaypointを追加
         for _ in range(k):
+            # -1でキューの最後を指定し、0でそのwaypointを取得
             last_waypoint = self._waypoints_queue[-1][0]
+            # sampling_radius先のwaypointを取得
+            # last_waypoint.next(2.0)を呼び出した際、分岐がある場合は２つ追加する場合あり
             next_waypoints = list(last_waypoint.next(self._sampling_radius))
 
+            # １つしかない場合はその経路追加
+            # もしもmaxlenを超える場合、先に追加された要素を削除
             if len(next_waypoints) == 1:
                 # only one option available ==> lanefollowing
                 next_waypoint = next_waypoints[0]
@@ -162,6 +170,7 @@ class LocalPlanner(object):
                 # random choice between the possible options
                 road_options_list = _retrieve_options(
                     next_waypoints, last_waypoint)
+                # ランダムに選択
                 road_option = random.choice(road_options_list)
                 next_waypoint = next_waypoints[road_options_list.index(
                     road_option)]
@@ -241,21 +250,22 @@ class LocalPlanner(object):
 
 def _retrieve_options(list_waypoints, current_waypoint):
     """
-    Compute the type of connection between the current active waypoint and the multiple waypoints present in
-    list_waypoints. The result is encoded as a list of RoadOption enums.
+    現在のアクティブなウェイポイントと、リスト内の複数のターゲットウェイポイントの間の接続のタイプを計算します。
+    結果は `RoadOption` 列挙型のリストとしてエンコードされます。
 
-    :param list_waypoints: list with the possible target waypoints in case of multiple options
-    :param current_waypoint: current active waypoint
-    :return: list of RoadOption enums representing the type of connection from the active waypoint to each
-             candidate in list_waypoints
+    :param list_waypoints: 複数のオプションがある場合のターゲットウェイポイントのリスト
+    :param current_waypoint: 現在のアクティブなウェイポイント
+    :return: 現在のウェイポイントからリスト内の各候補ウェイポイントまでの接続タイプを表す `RoadOption` 列挙型のリスト
     """
     options = []
     for next_waypoint in list_waypoints:
         # this is needed because something we are linking to
         # the beggining of an intersection, therefore the
         # variation in angle is small
+        # nextwaypointから3.0先のwaypointを取得。3.0は距離
         next_next_waypoint = next_waypoint.next(3.0)[0]
         link = _compute_connection(current_waypoint, next_next_waypoint)
+        # linkはRoadOption
         options.append(link)
 
     return options
@@ -339,27 +349,39 @@ class LocalPlannerNew(object):
                 RoadOption.LANEFOLLOW)
 
     def run_step(self):
+        # routeがNoneでないことを確認
         assert self._route is not None
 
+        # 車両の現在位置を取得
         u = self._vehicle.get_transform().location
         max_index = -1
 
+        # nodeはwaypoint, commandはRoadOption
+        # waypointの中からmap_skip内でしきい値以下のものを探す
         for i, (node, command) in enumerate(self._waypoints_queue):
+            # max_skipは、waypointをスキップしすぎないようにするための制限
             if i > self._max_skip:
                 break
 
+            # transform.locationはVector3Dで、x, y, zの属性を持つ
             v = node.transform.location
+            # 車両との距離を計算
             distance = np.sqrt((u.x - v.x) ** 2 + (u.y - v.y) ** 2)
 
+            # 現在のcheckpointがLaneFollowで、次のcheckpointがLaneFollowでない場合
+            # thresholdを小さい値にして更新を早める
             if int(self.checkpoint[1]) == 4 and int(command) != 4:
                 threshold = self._threshold_before
             else:
                 threshold = self._threshold_after
 
+            #　distance が threshold よりも小さい場合、新しいウェイポイントを次のチェックポイントとして設定
+            # 閾値内で最もあとにあるwaypointをチェックポイントとして設定
             if distance < threshold:
                 self.checkpoint = (node, command)
                 max_index = i
 
+        # max_indexまでのwaypointを削除, distancesも減らす
         for i in range(max_index + 1):
             if self.distances:
                 self.distance_to_goal -= self.distances[0]
@@ -367,6 +389,7 @@ class LocalPlannerNew(object):
 
             self._waypoints_queue.popleft()
 
+        # targetを先程求めたwaypointに設定
         if len(self._waypoints_queue) > 0:
             self.target = self._waypoints_queue[0]
 
@@ -445,10 +468,13 @@ class LocalPlannerOld(object):
         max_index = -1
 
         for i, (waypoint, _) in enumerate(self._waypoints_queue):
+            # もしmin_distanceよりも小さい場合、max_indexを更新
+            # max_indexはすでに通過したwaypointのインデックス
             if distance_vehicle(waypoint, vehicle_transform) < self._min_distance:
                 max_index = i
 
         if max_index >= 0:
+            # max_indexまでのwaypointを削除, distancesも減らす
             for i in range(max_index + 1):
                 if self.distances:
                     self.distance_to_goal -= self.distances[0]

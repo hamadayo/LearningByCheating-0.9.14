@@ -700,9 +700,9 @@ class ModuleWorld(object):
             affected_traffic_light_text = 'None'
             if self.affected_traffic_light is not None:
                 state = self.affected_traffic_light.state
-                if state == carla.libcarla.TrafficLightState.Green:
+                if state == carla.TrafficLightState.Green:
                     affected_traffic_light_text = 'GREEN'
-                elif state == carla.libcarla.TrafficLightState.Yellow:
+                elif state == carla.TrafficLightState.Yellow:
                     affected_traffic_light_text = 'YELLOW'
                 else:
                     affected_traffic_light_text = 'RED'

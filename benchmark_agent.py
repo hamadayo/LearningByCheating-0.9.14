@@ -4,7 +4,8 @@ import time
 from pathlib import Path
 
 from benchmark import make_suite, get_suites, ALL_SUITES
-from benchmark.run_benchmark import run_benchmark
+# from benchmark.run_benchmark import run_benchmark
+from benchmark.run_benchmark_use_model import run_benchmark
 
 import bird_view.utils.bz_utils as bzu
 

@@ -19,6 +19,7 @@ TURNING_PID = {
 class RoamingAgentMine(Agent):
     def __init__(self, vehicle, resolution, threshold_before, threshold_after):
         super().__init__(vehicle)
+        # print('aaaa')
 
         self._proximity_threshold = 9.5
         self.speed_control = PIDController(K_P=1.0)
@@ -30,6 +31,7 @@ class RoamingAgentMine(Agent):
         self.debug = dict()
 
     def run_step(self, inputs=None, debug=False, debug_info=None):
+        # print('iiii')
         self._local_planner.run_step()
 
         ox = self._vehicle.get_transform().get_forward_vector().x
@@ -99,6 +101,3 @@ class RoamingAgentMine(Agent):
 
         return control
         
-        # x = self.scale * self._pixels_per_meter * (location.x - self._world_offset[0])
-        # y = self.scale * self._pixels_per_meter * (location.y - self._world_offset[1])
-        # return [int(x - offset[0]), int(y - offset[1])]

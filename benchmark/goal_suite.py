@@ -13,6 +13,7 @@ from .base_suite import BaseSuite
 
 def from_file(poses_txt):
     pairs_file = Path(__file__).parent / poses_txt
+    print(f'[DEBUG] Reading poses from {pairs_file}')
     pairs = pairs_file.read_text().strip().split('\n')
     pairs = [(int(x[0]), int(x[1])) for x in map(lambda y: y.split(), pairs)]
 
@@ -39,7 +40,21 @@ class PointGoalSuite(BaseSuite):
         self._viz_queue = None
 
     def init(self, target=1, **kwargs):
-        self._target_pose = self._map.get_spawn_points()[target]
+        # targetでspawn pointを指定
+        # 右折
+        # custom_goal = carla.Location(x=92.89911651611328, y=310.88714599609375, z=-0.005579814780503511)
+        # 直進
+        custom_goal = carla.Location(x=-1.677998661994934, y=194.75930786132812, z=-0.005579814780503511)
+        # 左折
+        # custom_goal = carla.Location(x=11.107588768005371, y=329.89508056640625, z=-0.005579814780503511)
+
+        # スタート位置とゴール位置を手動設定
+        self._target_pose = carla.Transform(custom_goal)
+
+        # if target >= len(self._map.get_spawn_points()):
+        #     target = target % len(self._map.get_spawn_points())
+        # self._target_pose = self._map.get_spawn_points()[target]
+        print(f"[DEBUG] Target Pose: {self._target_pose}")
 
         super().init(**kwargs)
 
@@ -62,6 +77,9 @@ class PointGoalSuite(BaseSuite):
         self.command = self._local_planner.checkpoint[1]
         self.node = self._local_planner.checkpoint[0].transform.location
         self._next = self._local_planner.target[0].transform.location
+
+        location = self._player.get_location()
+        print(f'[DEBUG] Player Location: x={location.x}, y={location.y}, z={location.z}')
 
         return result
 
@@ -103,9 +121,14 @@ class PointGoalSuite(BaseSuite):
         return False
 
     def is_success(self):
+
         location = self._player.get_location()
         distance = location.distance(self._target_pose.location)
-        
+        # print(f"[DEBUG] Player Location: {location}")
+        # print(f"[DEBUG] Target Location: {self._target_pose.location}")
+        # print(f"[DEBUG] Distance to Target: {distance}")
+        # print(f"[DEBUG] Success Distance Threshold: {self.success_dist}")
+            
         return distance <= self.success_dist
 
     def apply_control(self, control):

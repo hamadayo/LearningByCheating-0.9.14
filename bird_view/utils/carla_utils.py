@@ -111,7 +111,7 @@ def get_birdview(observations):
 
     return birdview
 
-
+# 加工して格納
 def process(observations):
     result = dict()
     result['rgb'] = observations['rgb'].copy()
@@ -258,7 +258,7 @@ class TrafficTracker(object):
             
         light = TrafficTracker.get_closest_light(self._agent, self._world)
 
-        if light is None or light.state != carla.libcarla.TrafficLightState.Red:
+        if light is None or light.state != carla.TrafficLightState.Red:
             return
 
         light_location = light.get_transform().location
@@ -394,11 +394,20 @@ class CarlaWrapper(object):
     def spawn_vehicles(self):
 
         blueprints = self._blueprints.filter('vehicle.*')
+        # print(f"[DEBUG] Available blueprints: {[bp.id for bp in blueprints]}")
+
         if self.disable_two_wheels:
             blueprints = [x for x in blueprints if int(x.get_attribute('number_of_wheels')) == 4]
         spawn_points = self._map.get_spawn_points()
 
-        for i in range(self.n_vehicles):
+        # トラフィックマネージャーを取得してポートを指定
+        tm = self._client.get_trafficmanager(8000)
+        tm.set_global_distance_to_leading_vehicle(2.5)  # 前方車両との適切な車間距離を設定
+
+        custom_spawn_point = carla.Location(x=-1.4769777059555054, y=108.93453979492188, z=0.2)
+        custom_vehicle = carla.Transform(custom_spawn_point)
+
+        for i in range(1):
             blueprint = np.random.choice(blueprints)
             blueprint.set_attribute('role_name', 'autopilot')
     
@@ -411,69 +420,73 @@ class CarlaWrapper(object):
                 blueprint.set_attribute('driver_id', driver_id)
             
             vehicle = None
-            while vehicle is None:
-                vehicle = self._world.try_spawn_actor(blueprint, np.random.choice(spawn_points))
+            if i == 0:
+                while vehicle is None:
+                    vehicle = self._world.try_spawn_actor(blueprint, custom_vehicle)
+                    print(f"[DEBUG] Vehicle spawned at location: {custom_vehicle.location}")
+                    if vehicle is None:
+                        print(f"[WARNING] Failed to spawn vehicle at spawn point: {spawn_point.location}")
+                        continue
+                    location = vehicle.get_location()
+                    # print(f"[INFO] Vehicle spawned at location: {location}")
+            else:
+                 while vehicle is None:
+                    spawn_point = np.random.choice(spawn_points)
+                    vehicle = self._world.try_spawn_actor(blueprint, spawn_point)
+                    if vehicle is None:
+                        # print(f"[WARNING] Failed to spawn vehicle at spawn point: {spawn_point.location}")
+                        continue
+                    location = vehicle.get_location()
+                    # print(f"[INFO] Vehicle spawned at location: {location}")
 
-            vehicle.set_autopilot(True)
-            vehicle.start_dtcrowd()
+            vehicle.set_autopilot(True, tm.get_port())
 
             self._actor_dict['vehicle'].append(vehicle)
 
-        print ("spawned %d vehicles"%len(self._actor_dict['vehicle']))
+        # print ("spawned %d vehicles"%len(self._actor_dict['vehicle']))
 
     def spawn_pedestrians(self, n_pedestrians):
         SpawnActor = carla.command.SpawnActor
-
-        peds_spawned = 0
-        
+        # print(f"Spawning {n_pedestrians} pedestrians")
         walkers = []
-        controllers = []
         
-        while peds_spawned < n_pedestrians:
-            spawn_points = []
-            _walkers = []
-            _controllers = []
-            
-            for i in range(n_pedestrians - peds_spawned):
-                spawn_point = carla.Transform()
-                loc = self._world.get_random_location_from_navigation()
-    
-                if loc is not None:
-                    spawn_point.location = loc
-                    spawn_points.append(spawn_point)
-    
-            blueprints = self._blueprints.filter('walker.pedestrian.*')
-            batch = []
-            for spawn_point in spawn_points:
-                walker_bp = random.choice(blueprints)
-    
-                if walker_bp.has_attribute('is_invincible'):
-                    walker_bp.set_attribute('is_invincible', 'false')
-    
-                batch.append(SpawnActor(walker_bp, spawn_point))
-    
-            for result in self._client.apply_batch_sync(batch, True):
-                if result.error:
-                    print(result.error)
-                else:
-                    peds_spawned += 1
-                    _walkers.append(result.actor_id)
-    
-            walker_controller_bp = self._blueprints.find('controller.ai.walker')
-            batch = [SpawnActor(walker_controller_bp, carla.Transform(), walker) for walker in _walkers]
-    
-            for result in self._client.apply_batch_sync(batch, True):
-                if result.error:
-                    print(result.error)
-                else:
-                    _controllers.append(result.actor_id)
-                    
-            controllers.extend(_controllers)
-            walkers.extend(_walkers)
+        # スポーンポイントを取得
+        spawn_points = self._map.get_spawn_points()
+        if not spawn_points:
+            # print("No spawn points available.")
+            return self._world.get_actors(walkers)
 
-        print ("spawned %d pedestrians"%len(controllers))
+        # 歩行者のブループリントを取得
+        blueprints = self._blueprints.filter('walker.pedestrian.*')
 
-        return self._world.get_actors(walkers), self._world.get_actors(controllers)
+        # 歩行者をスポーン
+        for index in range(n_pedestrians):
+            if index >= len(spawn_points):
+                # print(f"Warning: Not enough spawn points for pedestrian {index}")
+                break
+
+            spawn_point = spawn_points[index]  # スポーンポイントを順番に取得
+            walker_bp = random.choice(blueprints)
+
+            # 歩行者が無敵状態でないことを設定
+            if walker_bp.has_attribute('is_invincible'):
+                walker_bp.set_attribute('is_invincible', 'false')
+
+            walker = SpawnActor(walker_bp, spawn_point)
+            result = self._client.apply_batch_sync([walker], True)[0]
+
+            if result.error:
+                print(f"Spawn failed at spawn point {index}: {result.error}")
+            else:
+                walkers.append(result.actor_id)
+                # スポーン成功時に座標をログに表示
+                actor = self._world.get_actor(result.actor_id)
+                location = actor.get_location()
+                # print(f"Spawned pedestrian {index + 1}/{n_pedestrians} at location: {location}")
+
+        # print(f"Spawned {len(walkers)} pedestrians")
+        return self._world.get_actors(walkers)
+
         
     def set_weather(self, weather_string):
         if weather_string == 'random':
@@ -509,24 +522,40 @@ class CarlaWrapper(object):
             self.spawn_vehicles()
             
             # Spawn pedestrians
-            peds, ped_controllers = self.spawn_pedestrians(self.n_pedestrians)
+            peds = self.spawn_pedestrians(self.n_pedestrians)
+            # print(f"Spawned {len(peds)} pedestrians")
             self._actor_dict['pedestrian'].extend(peds)
-            self._actor_dict['ped_controller'].extend(ped_controllers)
-            
-            self.peds_tracker = PedestrianTracker(weakref.ref(self), self.pedestrians, self.ped_controllers, respawn_peds=self._respawn_peds)
-    
+            # self._actor_dict['ped_controller'].extend(ped_controllers)
+            # self.peds_tracker = PedestrianTracker(weakref.ref(self), self.pedestrians, self.ped_controllers, respawn_peds=self._respawn_peds)
             self.traffic_tracker = TrafficTracker(self._player, self._world)
-
             ready = self.ready()
             if ready:
                 break
 
     def spawn_player(self):
+        # プレイヤー用の車両をスポーン
+
+        # 右折
+        # custom_start = carla.Location(x=-1.677998661994934, y=194.75930786132812, z=0.2)
+        # custom_rotation = carla.Rotation(pitch=0, yaw=90, roll=0)
+        # 直進
+        custom_start = carla.Location(x=-1.634338617324829, y=20.85472297668457, z=0.2)
+        custom_rotation = carla.Rotation(pitch=0, yaw=90, roll=0)
+        # 左折
+        # custom_start = carla.Location(x=-1.677998661994934, y=284.75930786132812, z=0.2)
+        # custom_rotation = carla.Rotation(pitch=0, yaw=90, roll=0)
+
+        self._start_pose = carla.Transform(custom_start, custom_rotation)
+        print(f"[DEBUG] Start Pose: {self._start_pose}")
+        print(f"[DEBUG] Target Pose: {self._target_pose}")
+
         self._player = self._world.spawn_actor(self._vehicle_bp, self._start_pose)
-        self._player.set_autopilot(False)
-        self._player.start_dtcrowd()
-        self._actor_dict['player'].append(self._player)
         
+        # プレイヤーの自動運転をオフに設定
+        self._player.set_autopilot(False)
+
+        # プレイヤーをアクターリストに追加
+        self._actor_dict['player'].append(self._player)
 
     def ready(self, ticks=50):
         self.tick()
@@ -559,7 +588,7 @@ class CarlaWrapper(object):
         map_utils.tick()
 
         self.traffic_tracker.tick()
-        self.peds_tracker.tick()
+        # self.peds_tracker.tick()
 
         # Put here for speed (get() busy polls queue).
         while self.rgb_image is None or self._rgb_queue.qsize() > 0:
@@ -604,7 +633,8 @@ class CarlaWrapper(object):
     def clean_up(self):
         for vehicle in self._actor_dict['vehicle']:
             # continue
-            vehicle.stop_dtcrowd()
+            # vehicle.stop_dtcrowd()
+            pass
         
         for controller in self._actor_dict['ped_controller']:
             controller.stop()
@@ -622,8 +652,8 @@ class CarlaWrapper(object):
         self._time_start = time.time()
         
         if self._player:
-            self._player.stop_dtcrowd()
-        self._player = None
+            # self._player.stop_dtcrowd()
+            self._player = None
 
         # Clean-up cameras
         if self._rgb_queue:
@@ -680,6 +710,7 @@ class CarlaWrapper(object):
         # Collisions.
         self.collided = False
         self._collided_frame_number = -1
+        self.collision_count = 0
 
         collision_sensor = self._world.spawn_actor(
                 self._blueprints.find('sensor.other.collision'),
@@ -691,6 +722,7 @@ class CarlaWrapper(object):
         # Lane invasion.
         self.invaded = False
         self._invaded_frame_number = -1
+        self.lane_invasion_count = 0
 
         invasion_sensor = self._world.spawn_actor(
                 self._blueprints.find('sensor.other.lane_invasion'),
@@ -712,6 +744,7 @@ class CarlaWrapper(object):
         if intensity > _self.col_threshold:
             _self.collided = True
             _self._collided_frame_number = event.frame_number
+            _self.collision_count += 1
 
     @staticmethod
     def _on_invasion(weakself, event):
@@ -722,6 +755,8 @@ class CarlaWrapper(object):
 
         _self.invaded = True
         _self._invaded_frame_number = event.frame_number
+        _self.lane_invasion_count += 1
+
 
     def __enter__(self):
         set_sync_mode(self._client, True)

@@ -15,14 +15,14 @@ from raindrop.dropgenerator import generateDrops
 from raindrop.config import cfg
 from PIL import Image
 
-# from tensorflow.keras.models import load_model
+from tensorflow.keras.models import load_model
 
         
-# model_path = 'self_driving_input_assessment_model.h5'  # モデルのパスを指定してください
-# model = load_model(model_path)
+model_path = 'self_driving_input_assessment_model.h5'  # モデルのパスを指定してください
+model = load_model(model_path)
 
 # global image_counter
-image_counter = 552
+image_counter = 0
 
 def add_raindrops_to_frame(frame):
 
@@ -117,11 +117,11 @@ def _paint(observations, control, diagnostic, debug, env, show=False):
         fontsize = 0.4
 
     # 信頼度の予測
-    # preprocessed_img = preprocess_image(observations['rgb'])
-    # prediction = model.predict(preprocessed_img)
-    # confidence_score = prediction[0][0]
+    preprocessed_img = preprocess_image(observations['rgb'])
+    prediction = model.predict(preprocessed_img)
+    confidence_score = prediction[0][0]
 
-    # _write('Confidence Score: %.4f' % confidence_score, 7, 0, fontsize=fontsize)
+    _write('Confidence Score: %.4f' % confidence_score, 7, 0, fontsize=fontsize)
 
 
     _write('Command: ' + _command, 1, 0, fontsize=fontsize)
@@ -239,12 +239,12 @@ def run_single(env, weather, start, target, agent_maker, seed, autopilot, show=F
     
     data_list = []
 
-    image_save_dir = '/home/yoshi-22/LearningByCheating/datasets/images'
+    image_save_dir = '/home/yoshi-22/LearningByCheating/datasets/images2'
     os.makedirs(image_save_dir, exist_ok=True)
 
     while env.tick():
         observations = env.get_observations()
-        # observations['rgb'] = add_raindrops_to_frame(observations['rgb'])
+        observations['rgb'] = add_raindrops_to_frame(observations['rgb'])
         control = agent.run_step(observations)
         diagnostic = env.apply_control(control)
 
@@ -254,7 +254,7 @@ def run_single(env, weather, start, target, agent_maker, seed, autopilot, show=F
         diagnostics.append(diagnostic)
 
         # image_filename = f'image_{env._tick:05d}.png'
-        image_filename = f'image_{image_counter:05d}.png'
+        image_filename = f'image_{image_counter:08d}.png'
         collision_count = env.collision_count
         lane_invasion_count = env.lane_invasion_count
         current_speed = np.linalg.norm(observations['velocity'])
@@ -273,7 +273,7 @@ def run_single(env, weather, start, target, agent_maker, seed, autopilot, show=F
             'vehicle_command': vehicle_command
         })
 
-        if env.is_failure() or env.is_success() or env.collided:
+        if env.is_failure() or env.is_success():
             result['success'] = env.is_success()
             result['total_lights_ran'] = env.traffic_tracker.total_lights_ran
             result['total_lights'] = env.traffic_tracker.total_lights
@@ -282,10 +282,7 @@ def run_single(env, weather, start, target, agent_maker, seed, autopilot, show=F
             break
     
     df = pd.DataFrame(data_list)
-    if os.path.exists('/home/yoshi-22/LearningByCheating/datasets/data.csv'):
-        df.to_csv('/home/yoshi-22/LearningByCheating/datasets/data.csv', mode='a', header=False, index=False)
-    else:
-        df.to_csv('/home/yoshi-22/LearningByCheating/datasets/data.csv', index=False)
+    df.to_csv('/home/yoshi-22/LearningByCheating/datasets/data2.csv', index=False)
 
     return result, diagnostics
 

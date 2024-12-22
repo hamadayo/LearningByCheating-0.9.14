@@ -21,7 +21,7 @@ import utils.bz_utils as bzu
 
 from models.birdview import BirdViewPolicyModelSS
 from models.image import ImagePolicyModelSS
-from train_util import one_hot
+from utils.train_utils import one_hot
 from utils.datasets.image_lmdb import get_image as load_data
 
 BACKBONE = 'resnet34'
@@ -29,7 +29,7 @@ GAP = 5
 N_STEP = 5
 PIXELS_PER_METER = 5
 CROP_SIZE = 192
-SAVE_EPOCHS = [1, 2, 4, 8, 16, 32, 64, 128, 192, 256]
+SAVE_EPOCHS = [1, 2, 4, 8, 16, 32, 64, 128, 192, 200, 210, 220, 230, 240, 250, 256]
 
 
 class CoordConverter():
@@ -213,12 +213,12 @@ def train_or_eval(coord_converter, criterion, net, teacher_net, data, optim, is_
             metrics = dict()
             metrics['loss'] = loss_mean.item()
             
-            images = _log_visuals(
-                    rgb_image, birdview, speed, command, loss,
-                    pred_location, (_pred_location+1)*coord_converter._img_size/2, _teac_location)
+            # images = _log_visuals(
+            #         rgb_image, birdview, speed, command, loss,
+            #         pred_location, (_pred_location+1)*coord_converter._img_size/2, _teac_location)
 
             bzu.log.scalar(is_train=is_train, loss_mean=loss_mean.item())
-            bzu.log.image(is_train=is_train, birdview=images)
+            # bzu.log.image(is_train=is_train, birdview=images)
 
         bzu.log.scalar(is_train=is_train, fps=1.0/(time.time() - tick))
 
@@ -251,7 +251,7 @@ def train(config):
 
     optim = torch.optim.Adam(net.parameters(), lr=config['optimizer_args']['lr'])
 
-    for epoch in tqdm.tqdm(range(config['max_epoch']+1), desc='Epoch'):
+    for epoch in tqdm.tqdm(range(config['resume_epoch'], config['max_epoch']+1), desc='Epoch'):
         train_or_eval(coord_converter, criterion, net, teacher_net, data_train, optim, True, config, epoch == 0)
         train_or_eval(coord_converter, criterion, net, teacher_net, data_val, None, False, config, epoch == 0)
 
@@ -282,7 +282,8 @@ if __name__ == '__main__':
     parser.add_argument('--batch_aug', type=int, default=1)
     parser.add_argument('--dataset_dir', default='/raid0/dian/carla_0.9.6_data')
     parser.add_argument('--batch_size', type=int, default=24)
-    parser.add_argument('--speed_noise', type=float, default=0.0)
+    parser.add_argument('--speed_noise', type=float, default=0.01)
+    parser.add_argument('--resume_epoch', type=int, default=240)
     parser.add_argument('--augment', choices=['medium', 'medium_harder', 'super_hard', 'None', 'custom'], default='super_hard')
 
     # Optimizer.
@@ -323,7 +324,8 @@ if __name__ == '__main__':
                     'world_y': 1.4,
                     'fixed_offset': 4.0,
                 },
-            }
+            },
+            'resume_epoch': parsed.resume_epoch
         }
 
     train(config)
