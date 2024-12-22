@@ -1,0 +1,36 @@
+{
+    "agent_args": {
+        "camera_args": {
+            "fixed_offset": 4.0,
+            "fov": 90,
+            "h": 160,
+            "w": 384,
+            "world_y": 1.4
+        }
+    },
+    "batch_size": 16,
+    "buffer_args": {
+        "aug_fix_iter": 819200,
+        "augment": "super_hard",
+        "batch_aug": 1,
+        "buffer_limit": 200000
+    },
+    "device": "cuda",
+    "epoch_per_episode": 5,
+    "log_dir": "/home/yoshi-22/LearningByCheating/logPhase2",
+    "log_iterations": 100,
+    "max_episode": 30,
+    "model_args": {
+        "backbone": "resnet34",
+        "model": "image_ss"
+    },
+    "optimizer_args": {
+        "lr": 0.0001
+    },
+    "phase1_ckpt": "/home/yoshi-22/LearningByCheating/logPhase1/model-256.th",
+    "port": 2000,
+    "speed_noise": 0.01,
+    "teacher_args": {
+        "model_path": "/home/yoshi-22/LearningByCheating/log/model-1000.th"
+    }
+}
